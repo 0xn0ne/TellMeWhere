@@ -59,32 +59,40 @@ python tmw.py --start 2 --keyword xxx
 
 ```json
 [
-    {
-        'protocol': 'HTTP',
-        'name': 'example',
-        'method': 'GET',
-        'url': 'http://www.example.com/search',
-        'query': {
-            'wd': {'type': 'key', 'value': ['{keyword}']},
-            'page': {'type': 'pages', 'value': 1},
-        },
-        'selector': 'xpath',
-        'parse': {
-            'ul': {
-                'selector': '//ul',
-                'child': {
-                    'title': '//li[@class="bt"]/text()',
-                    'url': '//li[@class="bt"]/a/@href',
-                    'brief': '//li[@class="sm"]/a/text()',
-                }
-            }
-        },
-        'headers': {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36'
-        },
-        'body': None,
-        'proxies': None
-    }
+  {
+    "protocol": "HTTP",
+    "name": "example",
+    "method": "GET",
+    "url": "http://example.com/search",
+    "query": {
+      "wd": {
+        "type": "key",
+        "value": [
+          "{keyword}"
+        ]
+      },
+      "page": {
+        "type": "pages",
+        "value": 1
+      }
+    },
+    "selector": "xpath",
+    "parse": {
+      "ul": {
+        "selector": "//ul",
+        "child": {
+          "title": "//*[@class=\"bt\"]/text()",
+          "url": "//*[@class=\"bt\"]/a/@href",
+          "brief": "//*[@class=\"sm\"]/a/text()"
+        }
+      }
+    },
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36"
+    },
+    "body": null,
+    "proxies": null
+  }
 ]
 ```
 
