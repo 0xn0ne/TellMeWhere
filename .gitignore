@@ -110,3 +110,6 @@ venv.bak/
 # mac
 .DS*
 *.swp
+
+# ide file
+.idea/

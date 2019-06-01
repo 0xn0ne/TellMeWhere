@@ -1,22 +1,17 @@
 # TellMeWhere
 
-> 小吐槽：一开始只是想弄一个傻瓜无脑式的信息收集工具，但是越写到后面突然醒悟，有些肮脏的搜索居然是 POST 方法，写着写着突然发现，居然有直接 API 返回结果的搜索引擎（抽根烟冷静冷静.jpg）隐隐在颤抖，要不要继续写下去，前面都还有什么肮脏无耻的障碍。工作两天感觉想通了，继续，omg，居然有的搜索引擎隐藏了源链接！omg，有的搜索引擎居然，每页返回的结果数不一样！！omg，异步太快被ban了......修修改改，缝缝补补又是一天<br/><br/>
-在这里向 scrapy 大佬致敬。醒悟了，我为我的愚蠢郑重的面壁，没有办法拯救小白，我要好好更正思想。
-
 # 概览
 
-因为在工作中总是会碰到一些信息收集的任务，为尽可能的能找到更多经常翻翻查查各种搜索语法资料，过程很枯燥，重复性高，而且可能是各个站点变化太快的原因，网上没有找到一个比较完整的信息收集工具，于是乎就有了自己弄一个的想法。
-
-一个异步的互联网信息收集工具，操作已尽可能傻瓜化，目前支持导出 json 格式，源代码很简单，希望有人能给我提出一些建议，现在脑子有点乱。
+一个异步的互联网信息收集工具，支持添加自定义引擎，引擎可自定义命令，自定义存储方式。
 
 # 快速开始
 
 ### 要求
 
 + Python 3.5.2+
-+ 工作于 Linux, Windows, Mac OSX, BSD
++ 工作于 Linux, Windows, Mac OSX
 
-### 构建
+### 运行前工作
 
 ```
 git clone https://github.com/0xn0ne/TellMeWhere.git
@@ -28,14 +23,14 @@ python install -r requirements.txt
 **参数**
 
 ```
+必要参数
+-e name [name ...], --engine name [name ...]
+                    指定使用的收集引擎，可一次指定多个引擎
+
 可选参数：
-  -h, --help            显示帮助页面
-  -e [name [name ...]], --engine [name [name ...]]
-                        指定要调用的搜索引擎
-  -o [number [number ...]], --output [number [number ...]]
-                        输出的结果的内容格式
-  --start number        开始搜索的页数
-  --end number          结束搜索的页数
+-h, --help          显示帮助信息
+-p [url [url ...]], --proxies [url [url ...]]
+                    设置 HTTP/HTTPS/SOCKS4/SOCKS5 代理，可使用多个。若指定文件路径如：file:///User/Ubuntu/proxy.txt，程序会读取文件中的代理
 ```
 
 **样例**
@@ -44,74 +39,63 @@ python install -r requirements.txt
 # 显示帮助页面
 python tmw.py -h
 
-# xxx 关键字搜索
-python tmw.py --keyword xxx
+# 使用 crawler 引擎收集信息，检测 http://www.httpbin.org 页面中存在 admin 或 email 或 login 关键字的页面
+python tmw.py -e crawler -ck admin email login -cu http://www.httpbin.org
 
-# xxx 关键字搜索，开始页数为 3
-python tmw.py --start 2 --keyword xxx
+# 使用 crawler 引擎收集信息，读取 url.txt 文件中的地址，读取 file:///User/Ubuntu/key.txt 中关键字，页面中存在这些关键字则记录
+python tmw.py -e crawler -ck file:///User/Ubuntu/key.txt -cu file://url.txt
 ```
 
-### 搜索引擎
+# API 简写
 
-你可以自定义搜索引擎，引擎配置目前为 json 格式，目前内置 google, bing, bing_cn, baidu, github, pansou, wowenda 这些站点的简单搜索规则
+### class HttpEngine
 
-一个搜索引擎为一个对象，可同时配置多个搜索引擎，如下：
+在该类中主要执行网络请求，数据处理，存储调用等一系列 HTTP 从请求到存储关键数据的过程。
 
-```json
-[
-  {
-    "protocol": "HTTP",
-    "name": "example",
-    "method": "GET",
-    "url": "http://example.com/search",
-    "query": {
-      "wd": {
-        "type": "key",
-        "value": [
-          "{keyword}"
-        ]
-      },
-      "page": {
-        "type": "pages",
-        "value": 1
-      }
-    },
-    "selector": "xpath",
-    "parse": {
-      "ul": {
-        "selector": "//ul",
-        "child": {
-          "title": "//*[@class=\"bt\"]/text()",
-          "url": "//*[@class=\"bt\"]/a/@href",
-          "brief": "//*[@class=\"sm\"]/a/text()"
-        }
-      }
-    },
-    "headers": {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36"
-    },
-    "body": null,
-    "proxies": null
-  }
-]
-```
+属性：
++ name：引擎的名称（需自定义）
+  + 该处的内容会添加到命令行帮助中，方便使用者调用
++ args：自定义引擎的参数（可自定义）
+  + 该处的内容会直接传入 `argparse.ArgumentParser()` 实例的 `add_argument` 方法中
+  + ！注意：若出现重复的参数，会出现覆盖的情况
++ proxies：代理列表（可自定义）
+  + 可手动设置该属性，`-p` 参数会添加到该列表中
++ input_args：用户输入的参数（不可自定义）
++ requested_url：请求过的 url（不可自定义）
++ session：`aiohttp.ClientSession` 实例（不可自定义）
 
-**引擎配置说明**
-
-+ protocol 请求协议
-+ name 引擎名称，该名称会被识别到命令行 -e 参数的可选项中
-+ method 请求方法
-+ url 请求的链接，带或不带参数都可以
-+ query 链接中查询输入部分，每个键表示一个查询输入键
-  + type 这个查询键的类型。
-    + key 表示一个是搜索关键字列表，搜索链接会根据列表来生成，列表内可以带参数，使用 "{xxx}" 表示参数，xxx 会被识别到命令行帮助信息中
-    + pages 表示翻页步长
-    + const 表示常量
-  + value 查询输入的值
-+ selector 表示解析引擎，目前可使用 xpath、api
-+ parse xpath 的解析语法
-+ headers 自定义的请求头
-+ body POST、PUT 方法的主体部分
-+ proxies 请求代理
-
-佛祖保佑！
+方法：
++ coroutine startup()
+  + 启动引擎的时候所做的预处理，该处需进行自定义
+  + 生成 `base.Request` 到预备请求列表中
++ coroutine run()
+  + HTTP 引擎运行的主体，里面会设置好可携带代理的 session
++ coroutine request_filter(request)
+  + 过滤重复的请求，默认对 url 进行过滤
+  + 参数：
+    + request：`base.http.Request` 实例
+  + 返回布尔值，如果已存在则返回 True，反之返回 False
++ coroutine request_handler(request)
+  + 处理待请求列表中的 Request 实例，发出网络请求
+  + 参数：
+    + request：`base.http.Request` 实例
++ coroutine push_request(request)
+  + 添加 `base.http.Request` 实例到待请求列表中
+  + 参数：
+    + request：`base.http.Request` 实例
++ coroutine process(response, request)
+  + 对响应内容进行处理，该处需进行自定义
+  + 参数：
+    + response：`aiohttp.ClientResponse` 实例
+    + request：`base.http.Request` 实例
+  + 生成 `base.Request` 实例会被添加到预备请求列表中，生成其它内容会被传入 `self.storage()` 函数中
++ coroutine parse(text, request, selector_type, selector)
+  + 解析工具，会根据 selector 将解析结果与规则的 key 对应上
+  + 参数：
+    + text：带解析的文本内容
+    + request：`base.http.Request`，记录解析来源
+    + selector_type：解析器名称，事实上该参数没用
+    + selector：解析规则，应为一个 map 对象，若有一个 map 为 `{"box": "//a/@href"}`，会根据 `//a/@href` 解析出所有符合该 xpath 规则的结果：`{"box": ["http://some1", "http://some2"], "source": "source_link"}`，`source` 表示来源页面，可以添加子解析。`{"box": {"selector": "//ul/li", "child": [{"c_box1": "//a/@href"}, {"c_box2": "//a/text()"}]}}`
+    + 返回解析结果
++ coroutine storage()
+  + 存储数据使用

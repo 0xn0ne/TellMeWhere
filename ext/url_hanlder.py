@@ -77,26 +77,45 @@ class Url:
         base += self.netloc
         return base
 
-    def url_path(self, encoded=True):
+    def path_full(self, encoded=True):
         base = self.path
         if self.params:
-            for k in self.params:
-                base += f';{k}={quote(self.params[k]) if encoded else self.params[k]}'
+            base += self.params_string(True, encoded)
         if self.query:
-            first = True
-            for k in self.query:
-                if first:
-                    base += '?'
-                    first = False
-                else:
-                    base += f'&'
-                base += f'{k}={quote(self.query[k]) if encoded else self.query[k]}'
+            base += self.query_string(True, encoded)
         if self.fragment:
             base += f'#{self.fragment}'
         return base
 
     def url_full(self, encoded=True):
-        return self.url_index() + self.url_path(encoded)
+        return self.url_index() + self.path_full(encoded)
+
+    def query_string(self, flag: bool = False, encoded: bool = True):
+        base = ''
+        if self.query:
+            first = True
+            for k in self.query:
+                if first:
+                    if flag:
+                        base += '?'
+                    first = False
+                else:
+                    base += f'&'
+                base += f'{k}={quote(self.query[k]) if encoded else self.query[k]}'
+        return base
+
+    def params_string(self, flag: bool = False, encoded: bool = True):
+        base = ''
+        if self.params:
+            first = True
+            for k in self.params:
+                if first:
+                    if not flag:
+                        base += f'{k}={quote(self.params[k]) if encoded else self.params[k]}'
+                        continue
+                    first = False
+                base += f';{k}={quote(self.params[k]) if encoded else self.params[k]}'
+        return base
 
     def __str__(self):
         return f"URL(scheme={self.scheme}, netloc={self.netloc}, path={self.path}, params={self.params}, query={self.query}, fragment={self.fragment}, hostname={self.hostname}, port={self.port}, username={self.username}, password={self.password})"
@@ -105,31 +124,23 @@ class Url:
 if __name__ == '__main__':
     u = Url('https://example.com:8952/nothing.py;param1=v1;param2=v2?query1=v1&query2=v2#frag')
     print(u.url_index())
-    print(u.url_path())
+    print(u.path_full())
     print(u.url_full())
     print(u.url_full(encoded=False))
     u = Url('https://example.com:8952/nothing.py?query1=val$@!{}wef e()<>&query2=你好吗#frag')
     print(u.url_index())
-    print(u.url_path())
+    print(u.path_full())
     print(u.url_full())
     print(u.url_full(encoded=False))
-    u = Url('https://example.com:8952/nothing.py;param1=v1;param2=v2#frag')
+    u = Url('socks://login:p4ssw0rd@example.com:8952/nothing.py#frag')
     print(u.url_index())
-    print(u.url_path())
+    print(u.path_full())
     print(u.url_full())
     print(u.url_full(encoded=False))
-    u = Url('https://login:p4ssw0rd@example.com:8952/nothing.py#frag')
-    print(u.url_index())
-    print(u.url_path())
-    print(u.url_full())
-    print(u.url_full(encoded=False))
-    u = Url('socks5://127.0.0.1:1080')
-    print(u.url_index())
-    print(u.url_path())
-    print(u.url_full())
-    print(u.url_full(encoded=False))
-    u = Url('')
-    print(u.url_index())
-    print(u.url_path())
-    print(u.url_full())
-    print(u.url_full(encoded=False))
+    u = Url('https://example.com:8952/;param1=v1;param2=v2?query1=val$@!{}waf() <>&query2=你好吗')
+    print(u.query_string())
+    print(u.query_string(flag=True))
+    print(u.query_string(encoded=False))
+
+    print(u.params_string())
+    print(u.params_string(flag=True))

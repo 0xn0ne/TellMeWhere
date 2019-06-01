@@ -5,11 +5,13 @@ import sys
 from ext.config import cfg
 
 APPNAME = cfg.appname
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = cfg.setting['LOG_LEVEL']
 
 logger = logging.getLogger(APPNAME)
-formatter = logging.Formatter(
-    '[%(asctime)s][%(filename)s][line:%(lineno)d][%(levelname)s]:%(message)s')
+
+formatter = logging.Formatter('[%(asctime)s][%(levelname)s]:%(message)s')
+if LOG_LEVEL <= logging.DEBUG:
+    formatter = logging.Formatter('[%(asctime)s][%(filename)s][line:%(lineno)d][%(levelname)s]:%(message)s')
 
 # 文件日志
 file_handler = logging.FileHandler('%s_%s.log' % (APPNAME, datetime.datetime.now().strftime('%Y%m%d')),

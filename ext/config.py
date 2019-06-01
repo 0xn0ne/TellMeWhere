@@ -106,6 +106,7 @@ class AppConfig(BaseConfig):
             'APP_NAME': 'TellMeWhere',
             'SETTING': {
                 'LOG_LEVEL': logging.INFO,
+                'EXPORTER': 'base.JSONExporter'
             }
         }
 
