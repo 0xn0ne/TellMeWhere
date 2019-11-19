@@ -113,3 +113,6 @@ venv.bak/
 
 # ide file
 .idea/
+
+# Other
+*.whl
