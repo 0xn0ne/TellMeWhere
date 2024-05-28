@@ -1,4 +1,4 @@
-aiohttp==3.9.2
+aiohttp==3.9.4
 aiosocksy==0.1.2
 parsel==1.5.1
 toml==0.10.0
